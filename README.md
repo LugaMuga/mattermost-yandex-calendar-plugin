@@ -32,6 +32,7 @@ If you are interested in contributing, please fork this repo and create a pull r
 ## To-Do's / Future Improvements
 * Add i18n localization to plugin
 * Add connect dialog
+* Fix limit of 1KB in event summary in CALDav client
 
 ## Troubleshoting
 * Yandex CALDav server ignore any \<comp/> and <prop-filter/> tags in calendar-query
