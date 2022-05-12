@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  test_mm:
+    build: .
+#    image: mattermost/mattermost-preview:6.5.0
+    container_name: test_mm
+    ports:
+    - "8065:8065"
+    - "2345:2345"
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE
+    environment:
+      MMCTL_LOCAL: true
+      MM_SERVICESETTINGS_SITEURL: http://localhost:8065
