@@ -1,13 +1,11 @@
 package dto
 
 type State struct {
-	InEvent     bool
-	SavedStatus string
+	CurrentEvent *Event
 }
 
 func DefaultState() *State {
 	return &State{
-		InEvent:     false,
-		SavedStatus: "",
+		CurrentEvent: nil,
 	}
 }

@@ -3,8 +3,8 @@ package service
 import (
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/conf"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/repository"
-	"github.com/mattermost/mattermost-server/v5/plugin"
-	"github.com/mattermost/mattermost-server/v5/shared/mlog"
+	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/robfig/cron/v3"
 	"strconv"
 )

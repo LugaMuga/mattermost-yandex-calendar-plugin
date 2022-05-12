@@ -4,9 +4,9 @@ import (
 	"github.com/lugamuga/go-webdav/caldav"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/conf"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/dto"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
-	"github.com/mattermost/mattermost-server/v5/shared/mlog"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/tkuchiki/go-timezone"
 	"sort"
 	"strconv"
@@ -111,6 +111,14 @@ func (s *Sender) getSettingsDialog(siteURL string, rootId string, calendars []ca
 	})
 
 	dialogElements = append(dialogElements, model.DialogElement{
+		Name:        conf.ChangeStatusOnMeetDialogOption,
+		DisplayName: "Setup 'In meeting' status automatically",
+		Type:        "bool",
+		Default:     strconv.FormatBool(settings.ChangeStatusOnMeet),
+		Optional:    true,
+	})
+
+	dialogElements = append(dialogElements, model.DialogElement{
 		Name:        conf.TenMinuteNotifyDialogOption,
 		DisplayName: "Get notification in 10 minutes before event",
 		Type:        "bool",
@@ -203,14 +211,14 @@ func (s *Sender) sendEvents(userId string, title string, attachments []*model.Sl
 		post = &model.Post{
 			UserId:    s.botId,
 			ChannelId: channel.Id,
-			Type:      model.POST_DEFAULT,
+			Type:      model.PostTypeDefault,
 			Message:   title + "\nNo events",
 		}
 	} else {
 		post = &model.Post{
 			UserId:    s.botId,
 			ChannelId: channel.Id,
-			Type:      model.POST_SLACK_ATTACHMENT,
+			Type:      model.PostTypeSlackAttachment,
 			Message:   title,
 		}
 		post.AddProp("attachments", attachments)

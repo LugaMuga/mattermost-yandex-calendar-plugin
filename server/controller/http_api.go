@@ -7,8 +7,8 @@ import (
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/dto"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/repository"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/service"
-	"github.com/mattermost/mattermost-server/v5/model"
-	"github.com/mattermost/mattermost-server/v5/plugin"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -100,6 +100,8 @@ func (hc *HttpController) handleSetupRequest() http.HandlerFunc {
 				settings.Calendar = value.(string)
 			case conf.SelectTimezoneDialogOption:
 				settings.TimeZone = value.(string)
+			case conf.ChangeStatusOnMeetDialogOption:
+				settings.ChangeStatusOnMeet = value.(bool)
 			case conf.DailyNotifyTimeDialogOption:
 				val := value.(string)
 				if val == conf.DailyNotifyTimeDisableOption {

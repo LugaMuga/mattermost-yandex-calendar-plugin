@@ -2,25 +2,29 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/blang/semver/v4"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/conf"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/dto"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/repository"
-	"github.com/mattermost/mattermost-server/v5/plugin"
-	"github.com/mattermost/mattermost-server/v5/shared/mlog"
+	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"time"
 )
 
 type User struct {
-	pluginAPI plugin.API
-	sender    *Sender
-	calendar  *Calendar
+	pluginAPI     plugin.API
+	serverVersion *semver.Version
+	sender        *Sender
+	calendar      *Calendar
 }
 
-func NewUserService(plugin plugin.API, sender *Sender, calendar *Calendar) *User {
+func NewUserService(plugin plugin.API, serverVersion *semver.Version, sender *Sender, calendar *Calendar) *User {
 	return &User{
-		pluginAPI: plugin,
-		sender:    sender,
-		calendar:  calendar,
+		pluginAPI:     plugin,
+		serverVersion: serverVersion,
+		sender:        sender,
+		calendar:      calendar,
 	}
 }
 
@@ -46,17 +50,15 @@ func (u *User) Settings(userId string, triggerId string, rootId string) {
 }
 
 func (u *User) UserEventsHandler(userId string) {
-	eventsByte, _ := u.pluginAPI.KVGet(userId + conf.Events)
 	userSettings := repository.GetSettings(u.pluginAPI, userId)
-
+	eventsByte, _ := u.pluginAPI.KVGet(userId + conf.Events)
 	var events []dto.Event
 	err := json.Unmarshal(eventsByte, &events)
 	if err != nil {
 		mlog.Warn("error on parse events from storage")
 	}
 	u.remindUser(userId, userSettings.GetUserNow(), userSettings, events)
-	// TODO uncomment, when will be possible to change user custom status
-	//u.updateUserEventStatus(userId, userSettings.GetUserNow(), userSettings, events)
+	u.updateUserEventStatus(userId, userSettings.GetUserNow(), userSettings, events)
 }
 
 func (u *User) remindUser(userId string, userNow time.Time, userSettings *dto.Settings, events []dto.Event) {
@@ -82,31 +84,45 @@ func (u *User) remindUser(userId string, userNow time.Time, userSettings *dto.Se
 	}
 }
 
+func (u *User) availableToSetCustomUserStatus() bool {
+	return u.serverVersion.GTE(semver.Version{
+		Major: 6,
+		Minor: 2,
+	})
+}
+
 func (u *User) updateUserEventStatus(userId string, userNow time.Time, userSettings *dto.Settings, events []dto.Event) {
-	if len(events) == 0 {
+	if userSettings.ChangeStatusOnMeet && !u.availableToSetCustomUserStatus() || len(events) == 0 {
 		return
 	}
 	userState := repository.GetState(u.pluginAPI, userId)
-	if userState == nil {
-		userState = dto.DefaultState()
+	if userState != nil && userState.CurrentEvent != nil &&
+		userState.CurrentEvent.StartBeforeOrEquals(userNow) &&
+		userState.CurrentEvent.EndAfterOrEquals(userNow) {
+		return
 	}
-	userInEvent := false
+	var currentEvent *dto.Event
 	for _, event := range events {
 		if event.StartBeforeOrEquals(userNow) && event.EndAfterOrEquals(userNow) {
-			userInEvent = true
+			currentEvent = &event
 			break
 		}
 	}
-	if !userState.InEvent && userInEvent {
-		userStatus, _ := u.pluginAPI.GetUserStatus(userId)
-		userState.SavedStatus = userStatus.Status
-		// Can't find way to change user custom status
-		u.pluginAPI.UpdateUserStatus(userId, userState.SavedStatus)
-	} else if userState.InEvent && !userInEvent {
-		u.pluginAPI.UpdateUserStatus(userId, userState.SavedStatus)
-		userState.SavedStatus = ""
+	if currentEvent != nil {
+		end := currentEvent.EndTime
+		err := u.pluginAPI.UpdateUserCustomStatus(userId, &model.CustomStatus{
+			Emoji:     "calendar",
+			Text:      "In meeting",
+			Duration:  "date_and_time",
+			ExpiresAt: time.Date(userNow.Year(), userNow.Month(), userNow.Day(), end.Hour(), end.Minute(), 0, 0, userNow.Location()),
+		})
+		if err != nil {
+			mlog.Warn("Error in update custom status for user: "+userId, mlog.Err(err))
+		}
 	}
-	userState.InEvent = userInEvent
+	userState = &dto.State{
+		CurrentEvent: currentEvent,
+	}
 	repository.SaveState(u.pluginAPI, userId, *userState)
 }
 

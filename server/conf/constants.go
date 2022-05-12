@@ -38,11 +38,12 @@ func ResolveUrlByPlugin(manifestId string, path string) string {
 }
 
 const (
-	SelectCalendarDialogOption  = "calendar"
-	SelectTimezoneDialogOption  = "timezone"
-	DailyNotifyTimeDialogOption = "dailyNotifyTime"
-	TenMinuteNotifyDialogOption = "tenMinutesNotify"
-	OneMinuteNotifyDialogOption = "oneMinuteNotify"
+	SelectCalendarDialogOption     = "calendar"
+	SelectTimezoneDialogOption     = "timezone"
+	DailyNotifyTimeDialogOption    = "dailyNotifyTime"
+	TenMinuteNotifyDialogOption    = "tenMinutesNotify"
+	OneMinuteNotifyDialogOption    = "oneMinuteNotify"
+	ChangeStatusOnMeetDialogOption = "changeStatusOnMeet"
 )
 
 const (

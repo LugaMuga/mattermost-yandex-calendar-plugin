@@ -37,16 +37,16 @@ func CalendarObjectToEventArray(calendarObjects []caldav.CalendarObject, timezon
 				return nil, errors.Wrap(err, "Can't parse LAST-MODIFIED for event "+eventName)
 			}
 
-			eventById[eventId] = dto.Event{
-				Id:               eventId,
-				Name:             eventName,
-				Description:      eventDescription,
-				Url:              eventUrl,
-				TimeZone:         timezone,
-				StartTime:        startTime,
-				EndTime:          endTime,
-				LastModifiedTime: lastModifiedTime,
-			}
+			eventById[eventId] = *dto.NewEvent(
+				eventId,
+				eventName,
+				eventDescription,
+				eventUrl,
+				timezone,
+				startTime,
+				endTime,
+				lastModifiedTime,
+			)
 		}
 	}
 	events := make([]dto.Event, 0, len(eventById))

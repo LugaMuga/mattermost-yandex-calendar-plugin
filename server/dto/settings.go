@@ -5,21 +5,23 @@ import (
 )
 
 type Settings struct {
-	TenMinutesNotify bool
-	OneMinutesNotify bool
-	Calendar         string
-	TimeZone         string
-	DailyNotifyTime  *time.Time
+	TenMinutesNotify   bool
+	OneMinutesNotify   bool
+	ChangeStatusOnMeet bool
+	Calendar           string
+	TimeZone           string
+	DailyNotifyTime    *time.Time
 }
 
 func DefaultSettings() *Settings {
 	defaultDailyNotifyTime := time.Date(1, 1, 1, 7, 0, 0, 0, time.UTC)
 	return &Settings{
-		TenMinutesNotify: true,
-		OneMinutesNotify: true,
-		Calendar:         "",
-		TimeZone:         "",
-		DailyNotifyTime:  &defaultDailyNotifyTime,
+		TenMinutesNotify:   true,
+		OneMinutesNotify:   true,
+		ChangeStatusOnMeet: true,
+		Calendar:           "",
+		TimeZone:           "",
+		DailyNotifyTime:    &defaultDailyNotifyTime,
 	}
 }
 
