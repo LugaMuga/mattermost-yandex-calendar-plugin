@@ -131,7 +131,7 @@ func getAutocompleteData() *model.AutocompleteData {
 func (hc *HookController) connect(args *model.CommandArgs) {
 	split := strings.Fields(args.Command)
 	if len(split) < 4 {
-		hc.sender.SendBotDMPost(args.UserId, "Wrong command format. Please read **[instruction](https://github.com/LugaMuga/mattermost-yandex-calendar-plugin/docs/readme.md)**")
+		hc.sender.SendBotDMPost(args.UserId, "Wrong command format. Please read **[instruction](https://github.com/LugaMuga/mattermost-yandex-calendar-plugin/blob/master/docs/readme.md)**")
 		return
 	}
 	credentials := &dto.Credentials{
