@@ -30,6 +30,7 @@ func (w *Workspace) AddUser(userId string) {
 	}
 }
 
+//nolint:golint,errcheck
 func (w *Workspace) DeleteUser(userId string) {
 	w.Lock()
 	defer w.Unlock()

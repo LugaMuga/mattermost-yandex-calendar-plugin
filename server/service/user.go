@@ -35,7 +35,7 @@ func (u *User) Connect(userId string, triggerId string, rootId string, credentia
 		u.sender.SendBotDMPost(userId, err.Error())
 		return
 	}
-	u.pluginAPI.KVSet(userId+conf.HomeSet, []byte(calendarHomeSet))
+	repository.SaveCalendarHomeSet(u.pluginAPI, userId, calendarHomeSet)
 	u.sender.SendWelcomePost(userId)
 	u.Settings(userId, triggerId, rootId)
 }
@@ -46,7 +46,10 @@ func (u *User) Settings(userId string, triggerId string, rootId string) {
 	if settings == nil {
 		settings = dto.DefaultSettings()
 	}
-	u.sender.OpenSettingsDialog(triggerId, rootId, calendars, settings)
+	err := u.sender.OpenSettingsDialog(triggerId, rootId, calendars, settings)
+	if err != nil {
+		mlog.Error("Couldn't open settings dialog", mlog.String("user_id", userId))
+	}
 }
 
 func (u *User) UserEventsHandler(userId string) {

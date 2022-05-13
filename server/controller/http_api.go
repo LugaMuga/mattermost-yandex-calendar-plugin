@@ -81,13 +81,12 @@ func (hc *HttpController) handleInfo(w http.ResponseWriter, _ *http.Request) {
 func (hc *HttpController) handleSetupRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		request := submitDialogRequestFromJson(r.Body)
-		userId := request.UserId
 		if request == nil || request.Submission == nil {
 			hc.pluginAPI.LogWarn("Failed to decode DialogSubmission")
 			http.Error(w, "invalid request", http.StatusBadRequest)
 			return
 		}
-
+		userId := request.UserId
 		if userId != r.Header.Get("Mattermost-User-ID") {
 			http.Error(w, "not authorized", http.StatusUnauthorized)
 			return

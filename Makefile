@@ -52,12 +52,27 @@ golangci-lint:
 
 ## Builds the server, if it exists, including support for multiple architectures.
 .PHONY: server
-server:
+server:  server-linux  server-darwin server-windows
+
+.PHONY: server-linux
+server-linux:
 ifneq ($(HAS_SERVER),)
 	mkdir -p server/dist;
 	cd server && env GOOS=linux CGO_ENABLED=0 GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-linux-amd64;
-#	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-darwin-amd64;
-#	cd server && env GOOS=windows GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-windows-amd64.exe;
+endif
+
+.PHONY: server-darwin
+server-darwin:
+ifneq ($(HAS_SERVER),)
+	mkdir -p server/dist;
+	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-darwin-amd64;
+endif
+
+.PHONY: server-windows
+server-windows:
+ifneq ($(HAS_SERVER),)
+	mkdir -p server/dist;
+	cd server && env GOOS=windows GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-windows-amd64.exe;
 endif
 
 ## Ensures NPM dependencies are installed without having to run this all the time.
@@ -114,11 +129,14 @@ dist:	apply server webapp bundle
 ## It uses the API if appropriate environment variables are defined,
 ## and otherwise falls back to trying to copy the plugin to a sibling mattermost-server directory.
 .PHONY: deploy
-deploy: dist
+deploy: dist deploy-wo-dist
+
+.PHONY: deploy-wo-dist
+deploy-wo-dist:
 	./build/bin/deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
 
 .PHONY: docker-debug-deploy
-docker-debug-deploy: deploy
+docker-debug-deploy: apply server-linux webapp bundle deploy-wo-dist
 	docker exec -it test_mm /bin/bash -c '/root/go/bin/dlv attach $$(pidof plugins/com.github.lugamuga.mattermost-yandex-calendar-plugin/server/dist/plugin-linux-amd64) --listen :2345 --headless=true --api-version=2 --accept-multiclient'
 
 .PHONY: debug-deploy

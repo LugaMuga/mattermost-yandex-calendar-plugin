@@ -1,12 +1,10 @@
 package service
 
 import (
-	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/conf"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/repository"
 	"github.com/mattermost/mattermost-server/v6/plugin"
 	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/robfig/cron/v3"
-	"strconv"
 )
 
 const (
@@ -55,7 +53,7 @@ func (s *Scheduler) AddCronJobs(userId string) {
 		if eventError != nil {
 			mlog.Warn("Error in create Event CRON for user:" + userId)
 		} else {
-			s.pluginAPI.KVSet(userId+conf.EventCronId, []byte(strconv.Itoa(int(eventCronEntryId))))
+			repository.SaveEventCronJob(s.pluginAPI, userId, int(eventCronEntryId))
 		}
 	}
 	if updateCronId == nil {
@@ -65,7 +63,7 @@ func (s *Scheduler) AddCronJobs(userId string) {
 		if updateError != nil {
 			mlog.Warn("Error in create Event CRON for user:" + userId)
 		} else {
-			s.pluginAPI.KVSet(userId+conf.UpdateCronId, []byte(strconv.Itoa(int(updateCronEntryId))))
+			repository.SaveUpdateCronJob(s.pluginAPI, userId, int(updateCronEntryId))
 		}
 	}
 }

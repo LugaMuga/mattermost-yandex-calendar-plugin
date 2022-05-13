@@ -2,10 +2,11 @@
 
 package plugin
 
+//nolint:golint,unused
 var manifest = struct {
-	Id      string
+	ID      string
 	Version string
 }{
-	Id:      "com.github.lugamuga.mattermost-yandex-calendar-plugin",
-	Version: "0.1.0",
+	ID:      "com.github.lugamuga.mattermost-yandex-calendar-plugin",
+	Version: "0.6.5",
 }

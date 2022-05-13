@@ -34,11 +34,10 @@ func NewSenderService(manifestId string, botId string, plugin plugin.API, server
 	}
 }
 
-func (s *Sender) SendBotDMPost(userId string, message string) *model.AppError {
+func (s *Sender) SendBotDMPost(userId string, message string) {
 	channel, err := s.pluginAPI.GetDirectChannel(userId, s.botId)
 	if err != nil {
-		//mlog.Error("Couldn't get bot's DM channel", mlog.String("user_id", userID))
-		return err
+		mlog.Error("Couldn't get bot's DM channel", mlog.String("user_id", userId))
 	}
 
 	post := &model.Post{
@@ -46,7 +45,10 @@ func (s *Sender) SendBotDMPost(userId string, message string) *model.AppError {
 		ChannelId: channel.Id,
 		Message:   message,
 	}
-	return s.sendPost(post)
+	err = s.sendPost(post)
+	if err != nil {
+		mlog.Error("Couldn't send direct message to user from bot", mlog.String("user_id", userId))
+	}
 }
 
 func (s *Sender) SendWelcomePost(userId string) {
@@ -187,18 +189,24 @@ func prepareDailyNotifyTimeOptions() []*model.PostActionOptions {
 	return options
 }
 
-func (s *Sender) SendEvent(userId string, title string, event dto.Event) *model.AppError {
+func (s *Sender) SendEvent(userId string, title string, event dto.Event) {
 	var attachments []*model.SlackAttachment
 	attachments = append(attachments, s.getFormattedEventAttachment(event))
-	return s.sendEvents(userId, title, attachments)
+	err := s.sendEvents(userId, title, attachments)
+	if err != nil {
+		mlog.Error("Couldn't send one event to user from bot", mlog.String("user_id", userId))
+	}
 }
 
-func (s *Sender) SendEvents(userId string, title string, events []dto.Event) *model.AppError {
+func (s *Sender) SendEvents(userId string, title string, events []dto.Event) {
 	var attachments []*model.SlackAttachment
 	for _, event := range events {
 		attachments = append(attachments, s.getFormattedEventAttachment(event))
 	}
-	return s.sendEvents(userId, title, attachments)
+	err := s.sendEvents(userId, title, attachments)
+	if err != nil {
+		mlog.Error("Couldn't send events to user from bot", mlog.String("user_id", userId))
+	}
 }
 
 func (s *Sender) sendEvents(userId string, title string, attachments []*model.SlackAttachment) *model.AppError {
@@ -207,7 +215,7 @@ func (s *Sender) sendEvents(userId string, title string, attachments []*model.Sl
 		mlog.Error("Couldn't get bot's DM channel", mlog.String("user_id", userId))
 	}
 	var post *model.Post
-	if attachments == nil || len(attachments) == 0 {
+	if len(attachments) == 0 {
 		post = &model.Post{
 			UserId:    s.botId,
 			ChannelId: channel.Id,

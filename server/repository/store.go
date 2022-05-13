@@ -10,6 +10,13 @@ import (
 	"time"
 )
 
+func SaveCalendarHomeSet(pluginAPI plugin.API, userId string, calendarHomeSet string) {
+	err := pluginAPI.KVSet(userId+conf.HomeSet, []byte(calendarHomeSet))
+	if err != nil {
+		mlog.Error("Error on save HomeSet for user:"+userId, mlog.Err(err))
+	}
+}
+
 func GetUserCalendarLastUpdate(pluginAPI plugin.API, userId string) *time.Time {
 	lastUpdateBytes, _ := pluginAPI.KVGet(userId + conf.LastUpdate)
 	if lastUpdateBytes != nil {
@@ -35,8 +42,36 @@ func GetUserCronJobIds(pluginAPI plugin.API, userId string) (*int, *int) {
 	return eventCronId, updateCronId
 }
 
+func SaveEventCronJob(pluginAPI plugin.API, userId string, eventCronJonId int) {
+	err := pluginAPI.KVSet(userId+conf.EventCronId, []byte(strconv.Itoa(eventCronJonId)))
+	if err != nil {
+		mlog.Error("Error on save EventCronId for user:"+userId, mlog.Err(err))
+	}
+}
+
+func SaveUpdateCronJob(pluginAPI plugin.API, userId string, updateCronJonId int) {
+	err := pluginAPI.KVSet(userId+conf.UpdateCronId, []byte(strconv.Itoa(updateCronJonId)))
+	if err != nil {
+		mlog.Error("Error on save UpdateCronId for user:"+userId, mlog.Err(err))
+	}
+}
+
+func SaveEvents(pluginAPI plugin.API, userId string, events []dto.Event) {
+	jsonVal, marshalErr := json.Marshal(events)
+	if marshalErr != nil {
+		mlog.Error("Error on marshal events for user:"+userId, mlog.Err(marshalErr))
+	}
+	err := pluginAPI.KVSet(userId+conf.Events, jsonVal)
+	if err != nil {
+		mlog.Error("Error on save state to store for user:"+userId, mlog.Err(err))
+	}
+}
+
 func SaveLastUpdate(pluginAPI plugin.API, userId string, lastUpdate time.Time) {
-	pluginAPI.KVSet(userId+conf.LastUpdate, []byte(lastUpdate.Format(time.RFC3339)))
+	err := pluginAPI.KVSet(userId+conf.LastUpdate, []byte(lastUpdate.Format(time.RFC3339)))
+	if err != nil {
+		mlog.Error("Error on save lastUpdated for user:"+userId, mlog.Err(err))
+	}
 }
 
 func SaveSettings(pluginAPI plugin.API, userId string, settings dto.Settings) {
@@ -77,11 +112,11 @@ func GetCalendarHomeSet(pluginAPI plugin.API, userId string) string {
 }
 
 func SaveState(pluginAPI plugin.API, userId string, state dto.State) {
-	stateJson, marshalErr := json.Marshal(state)
+	jsonVal, marshalErr := json.Marshal(state)
 	if marshalErr != nil {
 		mlog.Error("Error on Marshal state for user:"+userId, mlog.Err(marshalErr))
 	}
-	err := pluginAPI.KVSet(userId+conf.State, stateJson)
+	err := pluginAPI.KVSet(userId+conf.State, jsonVal)
 	if err != nil {
 		mlog.Error("Error on save state to store for user:"+userId, mlog.Err(err))
 	}
@@ -106,11 +141,11 @@ func GetState(pluginAPI plugin.API, userId string) *dto.State {
 }
 
 func SaveCredentials(pluginAPI plugin.API, userId string, credentials dto.Credentials) {
-	json, marshalErr := json.Marshal(credentials)
+	jsonVal, marshalErr := json.Marshal(credentials)
 	if marshalErr != nil {
 		mlog.Error("Error on marshal credentials for user:"+userId, mlog.Err(marshalErr))
 	}
-	err := pluginAPI.KVSet(userId+conf.Credentials, json)
+	err := pluginAPI.KVSet(userId+conf.Credentials, jsonVal)
 	if err != nil {
 		mlog.Error("Error on save credentials to storage for user:"+userId, mlog.Err(err))
 	}

@@ -47,9 +47,12 @@ func (p *Plugin) OnActivate() error {
 	command, err := controller.GetHookCommand(p.API)
 
 	if err != nil {
-		return errors.Wrap(err, "failed to get command")
+		return errors.Wrap(err, "Failed to get command")
 	}
-	p.API.RegisterCommand(command)
+	err = p.API.RegisterCommand(command)
+	if err != nil {
+		return errors.Wrap(err, "Failed on register command")
+	}
 
 	botID, err := p.client.Bot.EnsureBot(&model.Bot{
 		Username:    "yandex.calendar",
@@ -97,7 +100,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 
 func (p *Plugin) registerServices() {
 	p.calendar = service.NewCalendarService(p.API)
-	p.sender = service.NewSenderService(manifest.Id, p.botID, p.API, p.serverConfig)
+	p.sender = service.NewSenderService(manifest.ID, p.botID, p.API, p.serverConfig)
 	p.workspace = service.NewWorkspaceService(p.API)
 	p.user = service.NewUserService(p.API, p.getServerVersion(), p.sender, p.calendar)
 	p.scheduler = service.NewSchedulerService(p.API, p.workspace, p.user)

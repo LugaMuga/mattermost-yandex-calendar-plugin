@@ -55,8 +55,7 @@ func (c *Calendar) FindCalendars(userId string) ([]caldav.Calendar, error) {
 func (c *Calendar) LoadCalendar(userId string) ([]dto.Event, error) {
 	events, _ := c.loadTodayEvents(userId)
 	c.SortEvents(events)
-	eventsJson, _ := json.Marshal(events)
-	c.pluginAPI.KVSet(userId+conf.Events, eventsJson)
+	repository.SaveEvents(c.pluginAPI, userId, events)
 	repository.SaveLastUpdate(c.pluginAPI, userId, getNowForLastUpdated())
 	return events, nil
 }
@@ -89,8 +88,7 @@ func (c *Calendar) LoadCalendarUpdates(userId string) ([]dto.Event, []dto.Event)
 		}
 	}
 	c.SortEvents(events)
-	eventsJson, _ := json.Marshal(events)
-	c.pluginAPI.KVSet(userId+conf.Events, eventsJson)
+	repository.SaveEvents(c.pluginAPI, userId, events)
 	repository.SaveLastUpdate(c.pluginAPI, userId, now)
 	return addedEvents, updatedEvents
 }
