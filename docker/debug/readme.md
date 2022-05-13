@@ -4,11 +4,11 @@
 
 2. Go to project root directory (https://developers.mattermost.com/integrate/plugins/developer-setup/)
 ```bash
-    export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-    export MM_ADMIN_USERNAME=${ADMIN_USERNAME}
-    export MM_ADMIN_PASSWORD=${ADMIN_PASSWORD}
-    export GO_BUILD_FLAGS='-gcflags "all=-N -l"'
-    make deploy
+export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
+export MM_ADMIN_USERNAME=${ADMIN_USERNAME}
+export MM_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+export GO_BUILD_FLAGS='-gcflags "all=-N -l"'
+make deploy
 ```
 
 ### Debug plugin in Docker

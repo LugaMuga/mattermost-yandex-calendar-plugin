@@ -67,7 +67,7 @@ func (w *Workspace) GetUserIds() map[string]bool {
 	}
 	if userIdBytes == nil {
 		mlog.Warn("Couldn't find user ids")
-		return nil
+		return make(map[string]bool)
 	}
 	var userIds map[string]bool
 	err := json.Unmarshal(userIdBytes, &userIds)

@@ -12,5 +12,5 @@ services:
     cap_add:
       - SYS_PTRACE
     environment:
-      MMCTL_LOCAL: true
+      MMCTL_LOCAL: 'true'
       MM_SERVICESETTINGS_SITEURL: http://localhost:8065
