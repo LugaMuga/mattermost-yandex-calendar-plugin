@@ -2,8 +2,8 @@ package service
 
 import (
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/repository"
+	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/util"
 	"github.com/mattermost/mattermost-server/v6/plugin"
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/robfig/cron/v3"
 )
 
@@ -15,14 +15,16 @@ const (
 )
 
 type Scheduler struct {
+	logger    *util.Logger
 	pluginAPI plugin.API
 	user      *User
 	workspace *Workspace
 	cron      *cron.Cron
 }
 
-func NewSchedulerService(plugin plugin.API, workspace *Workspace, user *User) *Scheduler {
+func NewSchedulerService(logger *util.Logger, plugin plugin.API, workspace *Workspace, user *User) *Scheduler {
 	scheduler := &Scheduler{
+		logger:    logger,
 		pluginAPI: plugin,
 		workspace: workspace,
 		user:      user,
@@ -38,6 +40,13 @@ func (s *Scheduler) InitCronJobs() {
 	}
 }
 
+func (s *Scheduler) StopCronJobs() {
+	if s.cron == nil {
+		return
+	}
+	s.cron.Stop()
+}
+
 func (s *Scheduler) AddCronJobs(userId string) {
 	eventCronId, updateCronId := s.getActiveCronJobIds(userId)
 
@@ -51,7 +60,7 @@ func (s *Scheduler) AddCronJobs(userId string) {
 			s.user.UserEventsHandler(userId)
 		})
 		if eventError != nil {
-			mlog.Warn("Error in create Event CRON for user:" + userId)
+			s.logger.Warn("Error in create Event CRON", &userId)
 		} else {
 			repository.SaveEventCronJob(s.pluginAPI, userId, int(eventCronEntryId))
 		}
@@ -61,7 +70,7 @@ func (s *Scheduler) AddCronJobs(userId string) {
 			s.user.LoadEventUpdates(userId)
 		})
 		if updateError != nil {
-			mlog.Warn("Error in create Event CRON for user:" + userId)
+			s.logger.Warn("Error in create Update CRON", &userId)
 		} else {
 			repository.SaveUpdateCronJob(s.pluginAPI, userId, int(updateCronEntryId))
 		}

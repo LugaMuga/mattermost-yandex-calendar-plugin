@@ -1,39 +1,47 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/lugamuga/go-webdav"
 	"github.com/lugamuga/go-webdav/caldav"
-	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/conf"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/convertor"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/dto"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/repository"
+	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/util"
 	"github.com/mattermost/mattermost-server/v6/plugin"
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/pkg/errors"
 	"net/http"
 	"sort"
 	"time"
 )
 
-const CalendarEndpoint = "https://caldav.yandex.ru"
-
 type Calendar struct {
-	pluginAPI plugin.API
+	logger          *util.Logger
+	pluginAPI       plugin.API
+	serverUrl       string
+	credentialsRepo *repository.CredentialsRepo
 }
 
-func NewCalendarService(plugin plugin.API) *Calendar {
-	return &Calendar{pluginAPI: plugin}
+func NewCalendarService(
+	logger *util.Logger,
+	plugin plugin.API,
+	serverUrl string,
+	credentialsRepo *repository.CredentialsRepo) *Calendar {
+	return &Calendar{
+		logger:          logger,
+		pluginAPI:       plugin,
+		serverUrl:       serverUrl,
+		credentialsRepo: credentialsRepo,
+	}
 }
 
 func (c *Calendar) getClient(userId string) (*caldav.Client, error) {
-	credentials := repository.GetCredentials(c.pluginAPI, userId)
+	credentials := c.credentialsRepo.GetCredentials(userId)
 	if credentials == nil {
 		return nil, errors.New("Could not found credentials")
 	}
 	httpClient := webdav.HTTPClientWithBasicAuth(&http.Client{}, credentials.Login, credentials.Token)
-	client, err := caldav.NewClient(httpClient, CalendarEndpoint)
+	client, err := caldav.NewClient(httpClient, c.serverUrl)
 	return client, err
 }
 
@@ -70,12 +78,7 @@ func (c *Calendar) LoadCalendarUpdates(userId string) ([]dto.Event, []dto.Event)
 	var updatedEvents []dto.Event
 	var addedEvents []dto.Event
 	loadedEvents, _ := c.loadTodayEvents(userId)
-	existingEventsBytes, _ := c.pluginAPI.KVGet(userId + conf.Events)
-	var existingEvents []*dto.Event
-	err := json.Unmarshal(existingEventsBytes, &existingEvents)
-	if err != nil {
-		mlog.Warn("error on parse events from storage", mlog.Err(err))
-	}
+	existingEvents := repository.GetEvents(c.pluginAPI, userId)
 	existingEventById := convertor.SliceEventToMapById(existingEvents)
 	for _, event := range loadedEvents {
 		events = append(events, event)
@@ -105,15 +108,15 @@ func (c *Calendar) LoadEvents(userId string, start time.Time, end time.Time) ([]
 
 	calendarObjects, err := c.queryCalendarEventsByTimeRange(client, userSettings.Calendar, start, end)
 	if calendarObjects == nil {
-		c.pluginAPI.LogError("Can't get events for calendar "+userSettings.Calendar, "err", err)
+		c.logger.LogError("Can't get events for calendar "+userSettings.Calendar, &userId, err)
 	}
 	timezone, err := convertor.GetTimezone(calendarObjects)
 	if err != nil {
-		c.pluginAPI.LogWarn("Can't get timezone for calendar "+userSettings.Calendar, "err", err)
+		c.logger.LogWarn("Can't get timezone for calendar "+userSettings.Calendar, &userId, err)
 	}
 	eventDtos, err := convertor.CalendarObjectToEventArray(calendarObjects, timezone)
 	if err != nil {
-		c.pluginAPI.LogWarn("Can't parse events for calendar "+userSettings.Calendar, "err", err)
+		c.logger.LogWarn("Can't parse events for calendar "+userSettings.Calendar, &userId, err)
 	}
 	events = append(events, eventDtos...)
 	return events, nil

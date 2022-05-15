@@ -7,19 +7,6 @@ import (
 	"time"
 )
 
-// For store
-const (
-	Users        = "users"
-	Credentials  = ".credentials"
-	HomeSet      = ".calendarHomeSet"
-	Events       = ".events"
-	LastUpdate   = ".lastUpdate"
-	Settings     = ".setting"
-	State        = ".state"
-	EventCronId  = ".eventCronId"
-	UpdateCronId = ".updateCronId"
-)
-
 const (
 	IconImgName = "icon.png"
 )

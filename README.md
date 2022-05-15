@@ -10,7 +10,7 @@ Plugin for get events from [Yandex Calendar](https://calendar.yandex.ru/) in Mat
 - Get event updates
 - Get upcoming calendar events
 - Get a summary for any day you like
-- Setup status 'In meeting' automatically
+- Setup status 'In meeting' automatically (for server v6.2.0+)
 
 ## Build instructions
 There is no built package available for installation, you need to compile the source code. This plugin cannot be installed on Mattermost Cloud products, as Cloud only allows installing plugins from the marketplace.

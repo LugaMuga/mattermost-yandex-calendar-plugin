@@ -1,35 +1,43 @@
 package service
 
 import (
-	"encoding/json"
-	"github.com/blang/semver/v4"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/conf"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/dto"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/repository"
+	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/util"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"time"
 )
 
 type User struct {
-	pluginAPI     plugin.API
-	serverVersion *semver.Version
-	sender        *Sender
-	calendar      *Calendar
+	logger                    *util.Logger
+	pluginAPI                 plugin.API
+	supportedUserCustomStatus bool
+	credentialsRepo           *repository.CredentialsRepo
+	sender                    *Sender
+	calendar                  *Calendar
 }
 
-func NewUserService(plugin plugin.API, serverVersion *semver.Version, sender *Sender, calendar *Calendar) *User {
+func NewUserService(
+	logger *util.Logger,
+	plugin plugin.API,
+	supportedUserCustomStatus bool,
+	credentialsRepo *repository.CredentialsRepo,
+	sender *Sender,
+	calendar *Calendar) *User {
 	return &User{
-		pluginAPI:     plugin,
-		serverVersion: serverVersion,
-		sender:        sender,
-		calendar:      calendar,
+		logger:                    logger,
+		pluginAPI:                 plugin,
+		supportedUserCustomStatus: supportedUserCustomStatus,
+		credentialsRepo:           credentialsRepo,
+		sender:                    sender,
+		calendar:                  calendar,
 	}
 }
 
 func (u *User) Connect(userId string, triggerId string, rootId string, credentials dto.Credentials) {
-	repository.SaveCredentials(u.pluginAPI, userId, credentials)
+	u.credentialsRepo.SaveCredentials(userId, credentials)
 	calendarHomeSet, err := u.calendar.GetCalendarHomeSet(userId)
 	if err != nil {
 		u.sender.SendBotDMPost(userId, err.Error())
@@ -48,18 +56,13 @@ func (u *User) Settings(userId string, triggerId string, rootId string) {
 	}
 	err := u.sender.OpenSettingsDialog(triggerId, rootId, calendars, settings)
 	if err != nil {
-		mlog.Error("Couldn't open settings dialog", mlog.String("user_id", userId))
+		u.logger.LogError("Couldn't open settings dialog", &userId, err)
 	}
 }
 
 func (u *User) UserEventsHandler(userId string) {
 	userSettings := repository.GetSettings(u.pluginAPI, userId)
-	eventsByte, _ := u.pluginAPI.KVGet(userId + conf.Events)
-	var events []dto.Event
-	err := json.Unmarshal(eventsByte, &events)
-	if err != nil {
-		mlog.Warn("error on parse events from storage")
-	}
+	events := repository.GetEvents(u.pluginAPI, userId)
 	u.remindUser(userId, userSettings.GetUserNow(), userSettings, events)
 	u.updateUserEventStatus(userId, userSettings.GetUserNow(), userSettings, events)
 }
@@ -87,15 +90,8 @@ func (u *User) remindUser(userId string, userNow time.Time, userSettings *dto.Se
 	}
 }
 
-func (u *User) availableToSetCustomUserStatus() bool {
-	return u.serverVersion.GTE(semver.Version{
-		Major: 6,
-		Minor: 2,
-	})
-}
-
 func (u *User) updateUserEventStatus(userId string, userNow time.Time, userSettings *dto.Settings, events []dto.Event) {
-	if userSettings.ChangeStatusOnMeet && !u.availableToSetCustomUserStatus() || len(events) == 0 {
+	if !u.supportedUserCustomStatus || !userSettings.ChangeStatusOnMeet || len(events) == 0 {
 		return
 	}
 	userState := repository.GetState(u.pluginAPI, userId)
@@ -120,7 +116,7 @@ func (u *User) updateUserEventStatus(userId string, userNow time.Time, userSetti
 			ExpiresAt: time.Date(userNow.Year(), userNow.Month(), userNow.Day(), end.Hour(), end.Minute(), 0, 0, userNow.Location()),
 		})
 		if err != nil {
-			mlog.Warn("Error in update custom status for user: "+userId, mlog.Err(err))
+			u.logger.LogWarn("Error in update custom status", &userId, err)
 		}
 	}
 	userState = &dto.State{

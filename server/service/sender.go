@@ -4,9 +4,9 @@ import (
 	"github.com/lugamuga/go-webdav/caldav"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/conf"
 	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/dto"
+	"github.com/lugamuga/mattermost-yandex-calendar-plugin/server/util"
 	"github.com/mattermost/mattermost-server/v6/model"
 	"github.com/mattermost/mattermost-server/v6/plugin"
-	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 	"github.com/tkuchiki/go-timezone"
 	"sort"
 	"strconv"
@@ -15,29 +15,39 @@ import (
 )
 
 type Sender struct {
-	manifestId             string
-	botId                  string
-	pluginAPI              plugin.API
-	serverConfig           *model.Config
-	timezoneOptions        []*model.PostActionOptions
-	dailyNotifyTimeOptions []*model.PostActionOptions
+	manifestId                string
+	botId                     string
+	logger                    *util.Logger
+	pluginAPI                 plugin.API
+	supportedUserCustomStatus bool
+	serverConfig              *model.Config
+	timezoneOptions           []*model.PostActionOptions
+	dailyNotifyTimeOptions    []*model.PostActionOptions
 }
 
-func NewSenderService(manifestId string, botId string, plugin plugin.API, serverConfig *model.Config) *Sender {
+func NewSenderService(
+	manifestId string,
+	botId string,
+	logger *util.Logger,
+	plugin plugin.API,
+	supportedUserCustomStatus bool,
+	serverConfig *model.Config) *Sender {
 	return &Sender{
-		manifestId:             manifestId,
-		botId:                  botId,
-		pluginAPI:              plugin,
-		serverConfig:           serverConfig,
-		timezoneOptions:        prepareTimezoneOptions(),
-		dailyNotifyTimeOptions: prepareDailyNotifyTimeOptions(),
+		manifestId:                manifestId,
+		botId:                     botId,
+		logger:                    logger,
+		pluginAPI:                 plugin,
+		supportedUserCustomStatus: supportedUserCustomStatus,
+		serverConfig:              serverConfig,
+		timezoneOptions:           prepareTimezoneOptions(),
+		dailyNotifyTimeOptions:    prepareDailyNotifyTimeOptions(),
 	}
 }
 
 func (s *Sender) SendBotDMPost(userId string, message string) {
 	channel, err := s.pluginAPI.GetDirectChannel(userId, s.botId)
 	if err != nil {
-		mlog.Error("Couldn't get bot's DM channel", mlog.String("user_id", userId))
+		s.logger.LogError("Couldn't get bot's DM channel", &userId, err)
 	}
 
 	post := &model.Post{
@@ -47,7 +57,7 @@ func (s *Sender) SendBotDMPost(userId string, message string) {
 	}
 	err = s.sendPost(post)
 	if err != nil {
-		mlog.Error("Couldn't send direct message to user from bot", mlog.String("user_id", userId))
+		s.logger.LogError("Couldn't send direct message to user from bot", &userId, err)
 	}
 }
 
@@ -66,7 +76,7 @@ func (s *Sender) OpenSettingsDialog(triggerId string, rootId string, calendars [
 	}
 
 	if appErr := s.pluginAPI.OpenInteractiveDialog(dialog); appErr != nil {
-		s.pluginAPI.LogWarn("failed to open create poll dialog", "err", appErr.Error())
+		s.logger.LogWarn("Failed to open create settings dialog", nil, appErr)
 		return appErr
 	}
 	return nil
@@ -112,13 +122,15 @@ func (s *Sender) getSettingsDialog(siteURL string, rootId string, calendars []ca
 		Options:     s.dailyNotifyTimeOptions,
 	})
 
-	dialogElements = append(dialogElements, model.DialogElement{
-		Name:        conf.ChangeStatusOnMeetDialogOption,
-		DisplayName: "Setup 'In meeting' status automatically",
-		Type:        "bool",
-		Default:     strconv.FormatBool(settings.ChangeStatusOnMeet),
-		Optional:    true,
-	})
+	if s.supportedUserCustomStatus {
+		dialogElements = append(dialogElements, model.DialogElement{
+			Name:        conf.ChangeStatusOnMeetDialogOption,
+			DisplayName: "Setup 'In meeting' status automatically",
+			Type:        "bool",
+			Default:     strconv.FormatBool(settings.ChangeStatusOnMeet),
+			Optional:    true,
+		})
+	}
 
 	dialogElements = append(dialogElements, model.DialogElement{
 		Name:        conf.TenMinuteNotifyDialogOption,
@@ -194,7 +206,7 @@ func (s *Sender) SendEvent(userId string, title string, event dto.Event) {
 	attachments = append(attachments, s.getFormattedEventAttachment(event))
 	err := s.sendEvents(userId, title, attachments)
 	if err != nil {
-		mlog.Error("Couldn't send one event to user from bot", mlog.String("user_id", userId))
+		s.logger.LogError("Couldn't send one event to user from bot", &userId, err)
 	}
 }
 
@@ -205,14 +217,14 @@ func (s *Sender) SendEvents(userId string, title string, events []dto.Event) {
 	}
 	err := s.sendEvents(userId, title, attachments)
 	if err != nil {
-		mlog.Error("Couldn't send events to user from bot", mlog.String("user_id", userId))
+		s.logger.LogError("Couldn't send events to user from bot", &userId, err)
 	}
 }
 
 func (s *Sender) sendEvents(userId string, title string, attachments []*model.SlackAttachment) *model.AppError {
 	channel, err := s.pluginAPI.GetDirectChannel(userId, s.botId)
 	if err != nil {
-		mlog.Error("Couldn't get bot's DM channel", mlog.String("user_id", userId))
+		s.logger.LogError("Couldn't get bot's DM channel", &userId, err)
 	}
 	var post *model.Post
 	if len(attachments) == 0 {
@@ -246,7 +258,7 @@ func (s *Sender) getFormattedEventAttachment(event dto.Event) *model.SlackAttach
 
 func (s *Sender) sendPost(post *model.Post) *model.AppError {
 	if _, err := s.pluginAPI.CreatePost(post); err != nil {
-		mlog.Error(err.Error())
+		s.logger.LogError("Couldn't send post", nil, err)
 		return err
 	}
 	return nil

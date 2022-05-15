@@ -67,8 +67,8 @@ func GetTimezone(calendarObjects []caldav.CalendarObject) (string, error) {
 	return "Etc/UTC", errors.New("Timezone not found")
 }
 
-func SliceEventToMapById(events []*dto.Event) map[string]*dto.Event {
-	eventsById := make(map[string]*dto.Event, len(events))
+func SliceEventToMapById(events []dto.Event) map[string]dto.Event {
+	eventsById := make(map[string]dto.Event, len(events))
 	for _, e := range events {
 		eventsById[e.Id] = e
 	}
