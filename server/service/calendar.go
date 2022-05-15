@@ -109,6 +109,7 @@ func (c *Calendar) LoadEvents(userId string, start time.Time, end time.Time) ([]
 	calendarObjects, err := c.queryCalendarEventsByTimeRange(client, userSettings.Calendar, start, end)
 	if calendarObjects == nil {
 		c.logger.LogError("Can't get events for calendar "+userSettings.Calendar, &userId, err)
+		return events, errors.New("Can't get events from calendar")
 	}
 	timezone, err := convertor.GetTimezone(calendarObjects)
 	if err != nil {
@@ -117,6 +118,7 @@ func (c *Calendar) LoadEvents(userId string, start time.Time, end time.Time) ([]
 	eventDtos, err := convertor.CalendarObjectToEventArray(calendarObjects, timezone)
 	if err != nil {
 		c.logger.LogWarn("Can't parse events for calendar "+userSettings.Calendar, &userId, err)
+		return events, errors.New("Can't parse events from calendar")
 	}
 	events = append(events, eventDtos...)
 	return events, nil

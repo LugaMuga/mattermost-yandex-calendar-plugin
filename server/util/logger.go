@@ -36,11 +36,11 @@ func (l *Logger) Warn(msg string, userId *string) {
 
 func (l *Logger) logWarn(msg string, err *string, userId *string) {
 	if userId != nil && err != nil {
-		l.pluginAPI.LogWarn(msg, "userId", userId, "error", err)
+		l.pluginAPI.LogWarn(msg, "userId", *userId, "error", err)
 	} else if userId != nil {
-		l.pluginAPI.LogWarn(msg, "userId", userId)
+		l.pluginAPI.LogWarn(msg, "userId", *userId)
 	} else if err != nil {
-		l.pluginAPI.LogWarn(msg, "error", err)
+		l.pluginAPI.LogWarn(msg, "error", *err)
 	}
 }
 
@@ -62,10 +62,10 @@ func (l *Logger) Error(msg string, userId *string) {
 
 func (l *Logger) logError(msg string, err *string, userId *string) {
 	if userId != nil && err != nil {
-		l.pluginAPI.LogError(msg, "userId", userId, "error", err)
+		l.pluginAPI.LogError(msg, "userId", *userId, "error", *err)
 	} else if userId != nil {
-		l.pluginAPI.LogError(msg, "userId", userId)
+		l.pluginAPI.LogError(msg, "userId", *userId)
 	} else if err != nil {
-		l.pluginAPI.LogError(msg, "error", err)
+		l.pluginAPI.LogError(msg, "error", *err)
 	}
 }

@@ -57,6 +57,9 @@ func CalendarObjectToEventArray(calendarObjects []caldav.CalendarObject, timezon
 }
 
 func GetTimezone(calendarObjects []caldav.CalendarObject) (string, error) {
+	if len(calendarObjects) == 0 {
+		return "Etc/UTC", nil
+	}
 	for _, calendarObject := range calendarObjects {
 		for _, child := range calendarObject.Data.Children {
 			if child.Name == ical.CompTimezone {

@@ -199,7 +199,8 @@ func (hc *HookController) summary(args *model.CommandArgs) {
 
 	events, err := hc.calendar.LoadEvents(userId, start, end)
 	if err != nil {
-		hc.sender.SendBotDMPost(userId, "Catch error in load events")
+		hc.sender.SendBotDMPost(userId, ":no_entry_sign: Catch error on load events")
+		return
 	}
 
 	hc.calendar.SortEvents(events)
