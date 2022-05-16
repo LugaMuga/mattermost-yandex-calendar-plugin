@@ -98,7 +98,6 @@ func (p *Plugin) OnActivate() error {
 
 	p.registerRepos()
 	p.registerServices()
-	p.service.scheduler.InitCronJobs()
 	p.registerControllers()
 	return nil
 }
@@ -128,6 +127,8 @@ func (p *Plugin) registerServices() {
 	p.service.workspace = service.NewWorkspaceService(p.repo.workspace)
 	p.service.user = service.NewUserService(p.logger, p.API, p.supportedUserCustomStatus(), p.repo.credentials, p.service.sender, p.service.calendar)
 	p.service.scheduler = service.NewSchedulerService(p.logger, p.API, p.service.workspace, p.service.user)
+
+	p.service.scheduler.InitCronJobs()
 }
 
 func (p *Plugin) registerControllers() {
