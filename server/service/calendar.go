@@ -46,9 +46,14 @@ func (c *Calendar) getClient(userId string) (*caldav.Client, error) {
 }
 
 func (c *Calendar) GetCalendarHomeSet(userId string) (string, error) {
-	client, _ := c.getClient(userId)
+	client, err := c.getClient(userId)
+	if err != nil {
+		c.logger.LogError("Error get client for principal", &userId, err)
+		return "", errors.New(fmt.Sprintf("Error get client in principal method for user %s", userId))
+	}
 	principal, err := client.FindCurrentUserPrincipal()
 	if err != nil {
+		c.logger.LogError("Error get principal", &userId, err)
 		return "", errors.New(fmt.Sprintf("Error get principal for user %s", userId))
 	}
 	return client.FindCalendarHomeSet(principal)
@@ -56,7 +61,11 @@ func (c *Calendar) GetCalendarHomeSet(userId string) (string, error) {
 
 func (c *Calendar) FindCalendars(userId string) ([]caldav.Calendar, error) {
 	calendarHomeSet := repository.GetCalendarHomeSet(c.pluginAPI, userId)
-	client, _ := c.getClient(userId)
+	client, err := c.getClient(userId)
+	if err != nil {
+		c.logger.LogError("Error get calendars", &userId, err)
+		return make([]caldav.Calendar, 0), errors.New(fmt.Sprintf("Error get calendars for user %s", userId))
+	}
 	return client.FindCalendars(calendarHomeSet)
 }
 
@@ -104,8 +113,11 @@ func (c *Calendar) loadTodayEvents(userId string) ([]dto.Event, error) {
 func (c *Calendar) LoadEvents(userId string, start time.Time, end time.Time) ([]dto.Event, error) {
 	var events []dto.Event
 	userSettings := repository.GetSettings(c.pluginAPI, userId)
-	client, _ := c.getClient(userId)
-
+	client, err := c.getClient(userId)
+	if err != nil {
+		c.logger.LogError("Can't get client for calendar "+userSettings.Calendar, &userId, err)
+		return events, errors.New("Can't get client for calendar")
+	}
 	calendarObjects, err := c.queryCalendarEventsByTimeRange(client, userSettings.Calendar, start, end)
 	if calendarObjects == nil {
 		c.logger.LogError("Can't get events for calendar "+userSettings.Calendar, &userId, err)
