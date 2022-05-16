@@ -8,5 +8,5 @@ var manifest = struct {
 	Version string
 }{
 	ID:      "com.github.lugamuga.mattermost-yandex-calendar-plugin",
-	Version: "0.7.0-SNAPSHOT",
+	Version: "0.7.0",
 }

@@ -49,7 +49,6 @@ func (s *Sender) SendBotDMPost(userId string, message string) {
 	if err != nil {
 		s.logger.LogError("Couldn't get bot's DM channel", &userId, err)
 	}
-
 	post := &model.Post{
 		UserId:    s.botId,
 		ChannelId: channel.Id,

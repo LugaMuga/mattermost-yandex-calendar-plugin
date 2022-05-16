@@ -40,6 +40,17 @@ func GetUserCalendarLastUpdate(pluginAPI plugin.API, userId string) *time.Time {
 	return nil
 }
 
+func DeleteUserCronJobIds(pluginAPI plugin.API, userId string) {
+	eventErr := pluginAPI.KVDelete(userId + eventCronIdKey)
+	if eventErr != nil {
+		pluginAPI.LogError("Error in delete "+eventCronIdKey, "userId", userId)
+	}
+	updateErr := pluginAPI.KVDelete(userId + updateCronIdKey)
+	if updateErr != nil {
+		pluginAPI.LogError("Error in delete "+updateCronIdKey, "userId", userId)
+	}
+}
+
 func GetUserCronJobIds(pluginAPI plugin.API, userId string) (*int, *int) {
 	var eventCronId *int
 	var updateCronId *int

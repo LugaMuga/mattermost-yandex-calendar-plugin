@@ -30,14 +30,16 @@ func NewSchedulerService(logger *util.Logger, plugin plugin.API, workspace *Work
 		user:      user,
 		cron:      cron.New(),
 	}
-	scheduler.cron.Start()
 	return scheduler
 }
 
 func (s *Scheduler) InitCronJobs() {
+	s.StopCronJobs()
 	for userId := range s.workspace.GetUserIds() {
+		repository.DeleteUserCronJobIds(s.pluginAPI, userId)
 		s.AddCronJobs(userId)
 	}
+	s.cron.Start()
 }
 
 func (s *Scheduler) StopCronJobs() {
@@ -48,16 +50,14 @@ func (s *Scheduler) StopCronJobs() {
 }
 
 func (s *Scheduler) AddCronJobs(userId string) {
+	if !s.user.IsUserExist(userId) {
+		return
+	}
 	eventCronId, updateCronId := s.getActiveCronJobIds(userId)
 
 	if eventCronId == nil {
 		eventCronEntryId, eventError := s.cron.AddFunc(UserEventHandlerCronSpec, func() {
-			if _, err := s.pluginAPI.GetUser(userId); err != nil {
-				s.DeleteCronJobs(userId)
-				s.workspace.DeleteUser(userId)
-				return
-			}
-			s.user.UserEventsHandler(userId)
+			s.runHandlerOrDeleteUser(userId, s.user.UserEventsHandler)
 		})
 		if eventError != nil {
 			s.logger.Warn("Error in create Event CRON", &userId)
@@ -67,7 +67,7 @@ func (s *Scheduler) AddCronJobs(userId string) {
 	}
 	if updateCronId == nil {
 		updateCronEntryId, updateError := s.cron.AddFunc(UserEventUpdaterCronSpec, func() {
-			s.user.LoadEventUpdates(userId)
+			s.runHandlerOrDeleteUser(userId, s.user.LoadEventUpdates)
 		})
 		if updateError != nil {
 			s.logger.Warn("Error in create Update CRON", &userId)
@@ -84,6 +84,15 @@ func (s *Scheduler) DeleteCronJobs(userId string) {
 	}
 	if updateCronId != nil {
 		s.cron.Remove(cron.EntryID(*updateCronId))
+	}
+}
+
+func (s *Scheduler) runHandlerOrDeleteUser(userId string, handler func(string)) {
+	if s.user.IsUserExist(userId) {
+		handler(userId)
+	} else {
+		s.DeleteCronJobs(userId)
+		s.workspace.DeleteUser(userId)
 	}
 }
 

@@ -14,12 +14,12 @@ func NewLogger(plugin plugin.API) *Logger {
 	}
 }
 
-func (l *Logger) LogDebug(msg string, keyValuePairs ...interface{}) {
-	l.pluginAPI.LogDebug(msg, keyValuePairs)
+func (l *Logger) LogDebug(msg string) {
+	l.pluginAPI.LogDebug(msg)
 }
 
-func (l *Logger) LogInfo(msg string, keyValuePairs ...interface{}) {
-	l.pluginAPI.LogInfo(msg, keyValuePairs)
+func (l *Logger) LogInfo(msg string) {
+	l.pluginAPI.LogInfo(msg)
 }
 
 func (l *Logger) LogWarn(msg string, userId *string, err error) {

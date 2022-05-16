@@ -73,13 +73,12 @@ func (u *User) remindUser(userId string, userNow time.Time, userSettings *dto.Se
 		userNow.Minute() == userSettings.DailyNotifyTime.Minute() {
 		u.sender.SendEvents(userId, conf.GetTodayEventsTitle(userNow), events)
 	}
-
+	tenMinutesLater := userNow.Add(10 * time.Minute)
 	for _, event := range events {
-		if event.StartAfter(userNow) {
+		if event.StartBefore(userNow) || event.StartAfter(tenMinutesLater) {
 			continue
 		}
 		//TODO check attendees
-		tenMinutesLater := userNow.Add(10 * time.Minute)
 		if userSettings.TenMinutesNotify && event.StartEquals(tenMinutesLater) {
 			u.sender.SendEvent(userId, conf.TenMinutesEventTitle, event)
 		}
@@ -133,4 +132,12 @@ func (u *User) LoadEventUpdates(userId string) {
 	if updatedEvents != nil {
 		u.sender.SendEvents(userId, conf.UpdatedEventsTitle, updatedEvents)
 	}
+}
+
+func (u *User) IsUserExist(userId string) bool {
+	status, err := u.pluginAPI.GetUserStatus(userId)
+	if err == nil && status == nil {
+		return false
+	}
+	return true
 }
