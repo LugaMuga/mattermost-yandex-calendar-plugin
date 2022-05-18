@@ -14,7 +14,7 @@ Plugin for get events from [Yandex Calendar](https://calendar.yandex.ru/) in Mat
 
 ## Installation
 This plugin cannot be installed on Mattermost Cloud products, as Cloud only allows installing plugins from the marketplace.
-1. Download last [release](https://github.com/LugaMuga/mattermost-yandex-calendar-plugin/releases) or build it from sources
+1. Download the latest [release](https://github.com/LugaMuga/mattermost-yandex-calendar-plugin/releases) or build it from sources
 2. In your Mattermost, go to **System Console** > **Plugin Management** and upload the `.tar.gz` file.
 3. Add calendar bot to your team by [instruction](https://www.ibm.com/docs/en/z-chatops/1.1.0?topic=mattermost-inviting-created-bot-your-team)
 4. Allow any user in Mattermost server write to anyone by DM (**System console** > **Users and teams** > **Enable users to open Direct Message channels with** > **Any user on the Mattermost server**). This is fixed in server [v6.7.0](https://github.com/mattermost/mattermost-server/pull/19713)

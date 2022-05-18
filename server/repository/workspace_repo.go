@@ -62,5 +62,7 @@ func (wr *WorkspaceRepo) DeleteUser(userId string) {
 
 func (wr *WorkspaceRepo) deleteKeyForUser(userId string, key string) {
 	err := wr.pluginAPI.KVDelete(userId + key)
-	wr.logger.LogError("Error on delete "+key, &userId, err)
+	if err != nil {
+		wr.logger.LogError("Error on delete "+key, &userId, err)
+	}
 }
